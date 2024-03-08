@@ -2,7 +2,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -10,15 +9,17 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
+	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 )
 
 var samlMiddleware *samlsp.Middleware
 
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "displayName"))
+	fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "fiscalNumber"))
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +39,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	keyPair, err := tls.LoadX509KeyPair("myservice.cert", "myservice.key")
+	keyPair, err := tls.LoadX509KeyPair("crt.pem", "key.pem")
 	if err != nil {
 		panic(err) // TODO handle error
 	}
@@ -47,17 +48,30 @@ func main() {
 		panic(err) // TODO handle error
 	}
 
-	idpMetadataURL, err := url.Parse("https://samltest.id/saml/idp")
-	if err != nil {
-		panic(err) // TODO handle error
-	}
-	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
-		*idpMetadataURL)
+	// Read IDP Metadata from URL
+	/*xidpMetadataURL, err := url.Parse("https://demo.spid.gov.it/metadata.xml")
 	if err != nil {
 		panic(err) // TODO handle error
 	}
 
-	rootURL, err := url.Parse("http://localhost:8000")
+	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
+		*idpMetadataURL)
+	if err != nil {
+		panic(err) // TODO handle error
+	}*/
+
+	// Read IDP Metadata from file
+	data, err := os.ReadFile("idp.xml")
+
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+	idpMetadata, err := samlsp.ParseMetadata(data)
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+
+	rootURL, err := url.Parse("http://localhost:8080")
 	if err != nil {
 		panic(err) // TODO handle error
 	}
@@ -68,6 +82,10 @@ func main() {
 		Certificate: keyPair.Leaf,
 		IDPMetadata: idpMetadata,
 		SignRequest: true, // some IdP require the SLO request to be signed
+		RequestedAuthnContext: &saml.RequestedAuthnContext{
+			Comparison:           "minimum",
+			AuthnContextClassRef: "https://www.spid.gov.it/SpidL1",
+		},
 	})
 	app := http.HandlerFunc(hello)
 	slo := http.HandlerFunc(logout)

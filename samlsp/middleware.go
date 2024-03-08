@@ -68,7 +68,9 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // ServeMetadata handles requests for the SAML metadata endpoint.
 func (m *Middleware) ServeMetadata(w http.ResponseWriter, _ *http.Request) {
 	buf, _ := xml.MarshalIndent(m.ServiceProvider.Metadata(), "", "  ")
+	buf = m.ServiceProvider.SignMetadata(buf)
 	w.Header().Set("Content-Type", "application/samlmetadata+xml")
+
 	if _, err := w.Write(buf); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

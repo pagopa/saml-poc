@@ -3,7 +3,7 @@ module github.com/crewjam/saml
 go 1.19
 
 require (
-	github.com/beevik/etree v1.2.0
+	github.com/beevik/etree v1.3.0
 	github.com/crewjam/httperr v0.2.0
 	github.com/dchest/uniuri v1.2.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
@@ -21,6 +21,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/moov-io/signedxml v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect

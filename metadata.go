@@ -56,7 +56,8 @@ type EntityDescriptor struct {
 	ID                            string        `xml:",attr,omitempty"`
 	ValidUntil                    time.Time     `xml:"validUntil,attr,omitempty"`
 	CacheDuration                 time.Duration `xml:"cacheDuration,attr,omitempty"`
-	Signature                     *etree.Element
+	SpidNamespace                 string        `xml:"xmlns:spid,attr"`
+	Signature                     *Signature
 	RoleDescriptors               []RoleDescriptor               `xml:"RoleDescriptor"`
 	IDPSSODescriptors             []IDPSSODescriptor             `xml:"IDPSSODescriptor"`
 	SPSSODescriptors              []SPSSODescriptor              `xml:"SPSSODescriptor"`
@@ -111,6 +112,38 @@ type Organization struct {
 	OrganizationURLs         []LocalizedURI  `xml:"OrganizationURL"`
 }
 
+type Signature struct {
+	XMLName        xml.Name `xml:"Signature"`
+	Xmls           string   `xml:"xmlns,attr"`
+	SignedInfo     SignedInfo
+	SignatureValue string `xml:"SignatureValue"`
+	KeyInfo        KeyInfo
+}
+
+type SignedInfo struct {
+	XMLName                xml.Name  `xml:"SignedInfo"`
+	CanonicalizationMethod Algorithm `xml:"CanonicalizationMethod"`
+	SignatureMethod        Algorithm `xml:"SignatureMethod"`
+	Reference              Reference
+}
+
+type Reference struct {
+	XMLName      xml.Name `xml:"Reference"`
+	URI          string   `xml:",attr,omitempty"`
+	Transforms   Transforms
+	DigestMethod Algorithm `xml:"DigestMethod"`
+	DigestValue  string    `xml:"DigestValue"`
+}
+
+type Algorithm struct {
+	Algorithm string `xml:",attr"`
+}
+
+type Transforms struct {
+	XMLName   xml.Name    `xml:"Transforms"`
+	Transform []Algorithm `xml:"Transform"`
+}
+
 // LocalizedName represents the SAML type localizedNameType.
 //
 // See http://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf §2.2.4
@@ -132,11 +165,17 @@ type LocalizedURI struct {
 // See http://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf §2.3.2.2
 type ContactPerson struct {
 	ContactType      string `xml:"contactType,attr"`
+	Extensions       Extension
 	Company          string
 	GivenName        string
 	SurName          string
 	EmailAddresses   []string `xml:"EmailAddress"`
 	TelephoneNumbers []string `xml:"TelephoneNumber"`
+}
+
+type Extension struct {
+	IPACode string `xml:"spid:IPACode"`
+	Public  string `xml:"spid:Public"`
 }
 
 // RoleDescriptor represents the SAML element RoleDescriptor.

@@ -25,6 +25,7 @@ import (
 
 	"github.com/crewjam/saml/logger"
 	"github.com/crewjam/saml/xmlenc"
+	"github.com/moov-io/signedxml"
 )
 
 // NameIDFormat is the format of the id
@@ -62,6 +63,7 @@ type SignatureVerifier interface {
 //
 // See the example directory for an example of a web application using
 // the service provider interface.
+
 type ServiceProvider struct {
 	// Entity ID is optional - if not specified then MetadataURL will be used
 	EntityID string
@@ -141,6 +143,18 @@ const DefaultValidDuration = time.Hour * 24 * 2
 // DefaultCacheDuration is how long we ask the IDP to cache the SP metadata.
 const DefaultCacheDuration = time.Hour * 24 * 1
 
+func (sp *ServiceProvider) SignMetadata(ed []byte) []byte {
+	signer, err := signedxml.NewSigner(string(ed))
+	if err != nil {
+		return nil
+	}
+	signedXML, err := signer.Sign(sp.Key)
+	if err != nil {
+		return nil
+	}
+	return []byte(signedXML)
+}
+
 // Metadata returns the service provider metadata
 func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 	validDuration := DefaultValidDuration
@@ -150,6 +164,9 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 
 	authnRequestsSigned := len(sp.SignatureMethod) > 0
 	wantAssertionsSigned := true
+	isDefault := true
+	notDefault := false
+	isRequired := true
 	validUntil := TimeNow().Add(validDuration)
 
 	var keyDescriptors []KeyDescriptor
@@ -200,9 +217,47 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 	}
 
 	return &EntityDescriptor{
-		EntityID:   firstSet(sp.EntityID, sp.MetadataURL.String()),
-		ValidUntil: validUntil,
-
+		EntityID:      firstSet(sp.EntityID, sp.MetadataURL.String()),
+		ValidUntil:    validUntil,
+		SpidNamespace: "https://spid.gov.it/saml-extensions",
+		Signature: &Signature{
+			Xmls: "http://www.w3.org/2000/09/xmldsig#",
+			SignedInfo: SignedInfo{
+				CanonicalizationMethod: Algorithm{
+					Algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#",
+				},
+				SignatureMethod: Algorithm{
+					Algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
+				},
+				Reference: Reference{
+					URI: "",
+					Transforms: Transforms{
+						Transform: []Algorithm{
+							{
+								Algorithm: "http://www.w3.org/2000/09/xmldsig#enveloped-signature",
+							},
+							{
+								Algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#",
+							},
+						},
+					},
+					DigestMethod: Algorithm{
+						Algorithm: "http://www.w3.org/2001/04/xmlenc#sha512",
+					},
+					DigestValue: "",
+				},
+			},
+			SignatureValue: "",
+			KeyInfo: KeyInfo{
+				X509Data: X509Data{
+					X509Certificates: []X509Certificate{
+						{
+							Data: base64.StdEncoding.EncodeToString(sp.Certificate.Raw),
+						},
+					},
+				},
+			},
+		},
 		SPSSODescriptors: []SPSSODescriptor{
 			{
 				SSODescriptor: SSODescriptor{
@@ -219,17 +274,102 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 
 				AssertionConsumerServices: []IndexedEndpoint{
 					{
-						Binding:  HTTPPostBinding,
-						Location: sp.AcsURL.String(),
-						Index:    1,
+						Binding:   HTTPPostBinding,
+						Location:  sp.AcsURL.String(),
+						Index:     0,
+						IsDefault: &isDefault,
 					},
 					{
-						Binding:  HTTPArtifactBinding,
-						Location: sp.AcsURL.String(),
-						Index:    2,
+						Binding:   HTTPRedirectBinding,
+						Location:  sp.AcsURL.String(),
+						Index:     1,
+						IsDefault: &notDefault,
+					},
+				},
+				AttributeConsumingServices: []AttributeConsumingService{
+					{
+						Index:     0,
+						IsDefault: &isDefault,
+						ServiceNames: []LocalizedName{
+							{
+								Lang:  "it",
+								Value: "Service 1",
+							},
+						},
+						ServiceDescriptions: []LocalizedName{
+							{
+								Lang:  "it",
+								Value: "Service 1 mock description",
+							},
+						},
+						RequestedAttributes: []RequestedAttribute{
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "FiscalNumber",
+									Name:         "fiscalNumber",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "Name",
+									Name:         "name",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "FamilyName",
+									Name:         "familyName",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "DateOfBirth",
+									Name:         "dateOfBirth",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+						},
 					},
 				},
 			},
+		},
+		Organization: &Organization{
+			OrganizationNames: []LocalizedName{
+				{
+					Lang:  "it",
+					Value: "Foobar",
+				},
+			},
+			OrganizationDisplayNames: []LocalizedName{
+				{
+					Lang:  "it",
+					Value: "Foobar",
+				},
+			},
+			OrganizationURLs: []LocalizedURI{
+				{
+					Lang:  "it",
+					Value: "https://www.foobar.it/",
+				},
+			},
+		},
+		ContactPerson: &ContactPerson{
+			ContactType: "other",
+			Extensions: Extension{
+				IPACode: "c_h501",
+			},
+			Company:          "Foobar",
+			GivenName:        "GivenName",
+			SurName:          "SurName",
+			EmailAddresses:   []string{"asd@example.com", "ads@example.com"},
+			TelephoneNumbers: []string{"+393487726485", "+393487726235"},
 		},
 	}
 }
@@ -404,21 +544,24 @@ func (sp *ServiceProvider) MakeArtifactResolveRequest(artifactID string) (*Artif
 // that uses the specified binding (HTTPRedirectBinding or HTTPPostBinding)
 func (sp *ServiceProvider) MakeAuthenticationRequest(idpURL string, binding string, resultBinding string) (*AuthnRequest, error) {
 
-	allowCreate := true
+	//allowCreate := true
 	nameIDFormat := sp.nameIDFormat()
 	req := AuthnRequest{
-		AssertionConsumerServiceURL: sp.AcsURL.String(),
-		Destination:                 idpURL,
-		ProtocolBinding:             resultBinding, // default binding for the response
-		ID:                          fmt.Sprintf("id-%x", randomBytes(20)),
-		IssueInstant:                TimeNow(),
-		Version:                     "2.0",
+		AssertionConsumerServiceURL:    sp.AcsURL.String(),
+		AssertionConsumerServiceIndex:  "0",
+		AttributeConsumingServiceIndex: "0",
+		Destination:                    idpURL,
+		ProtocolBinding:                resultBinding, // default binding for the response
+		ID:                             fmt.Sprintf("id-%x", randomBytes(20)),
+		IssueInstant:                   TimeNow(),
+		Version:                        "2.0",
 		Issuer: &Issuer{
-			Format: "urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
-			Value:  firstSet(sp.EntityID, sp.MetadataURL.String()),
+			Format:        "urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
+			Value:         firstSet(sp.EntityID, sp.MetadataURL.String()),
+			NameQualifier: "test",
 		},
 		NameIDPolicy: &NameIDPolicy{
-			AllowCreate: &allowCreate,
+			//AllowCreate: &allowCreate,
 			// TODO(ross): figure out exactly policy we need
 			// urn:mace:shibboleth:1.0:nameIdentifier
 			// urn:oasis:names:tc:SAML:2.0:nameid-format:transient

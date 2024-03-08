@@ -146,6 +146,8 @@ func New(opts Options) (*Middleware, error) {
 		Session:         DefaultSessionProvider(opts),
 	}
 	m.RequestTracker = DefaultRequestTracker(opts, &m.ServiceProvider)
+	m.ServiceProvider.AuthnNameIDFormat = "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+
 	if opts.UseArtifactResponse {
 		m.ResponseBinding = saml.HTTPArtifactBinding
 	}
