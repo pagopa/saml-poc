@@ -2,10 +2,12 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,13 +20,62 @@ import (
 
 var samlMiddleware *samlsp.Middleware
 
+const tmplLayout = `<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>spid-go Example Application</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <meta charset="UTF-8" />
+</head>
+<body>
+    <div class="container">
+        <h1>spid-go Example Application</h1>
+        <div id="content">
+        {{ . }}
+        </div>
+    </div>
+</body>
+</html>
+`
+
+const tmplUser = `<p>This page shows details about the currently logged user.</p>
+<p><a class="btn btn-primary" href="/logout">Logout</a></p>
+<h1>NameID:</h1>
+<p>{{ .fiscalNumber}}</p>
+<h2>SPID Level:</h2>
+<p>{{ .Level }}</p>
+<h2>Attributes</h2>
+<table>
+  <tr>
+    <th>Key</th>
+    <th>Value</th>
+  </tr>
+  {{ range $key, $val := . }}
+      <tr>
+        <td>{{ $key }}</td>
+        <td>{{ $val }}</td>
+	  </tr>
+  {{ end }}
+</table>
+`
+
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "fiscalNumber"))
+	t := template.Must(template.New("index").Parse(tmplLayout))
+
+	var t2 bytes.Buffer
+	session := samlsp.AttributesFromContext(r.Context())
+	fmt.Println(session)
+
+	template.Must(template.New("user").Parse(tmplUser)).Execute(&t2, session)
+	t.Execute(w, template.HTML(t2.String()))
+	//fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "fiscalNumber"))
 }
 
+// Logout for SPID L1 only
 func logout(w http.ResponseWriter, r *http.Request) {
 	nameID := samlsp.AttributeFromContext(r.Context(), "urn:oasis:names:tc:SAML:attribute:subject-id")
 	url, err := samlMiddleware.ServiceProvider.MakeRedirectLogoutRequest(nameID, "")
+	//_, err := samlMiddleware.ServiceProvider.MakePostLogoutRequest(nameID, "")
 	if err != nil {
 		panic(err) // TODO handle error
 	}
@@ -35,6 +86,17 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Location", url.String())
+	w.WriteHeader(http.StatusFound)
+}
+
+// Logout for SPID L2 and SPID L3
+
+func logoutL2(w http.ResponseWriter, r *http.Request) {
+	err := samlMiddleware.Session.DeleteSession(w, r)
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+	w.Header().Add("Location", "/hello")
 	w.WriteHeader(http.StatusFound)
 }
 
@@ -84,11 +146,12 @@ func main() {
 		SignRequest: true, // some IdP require the SLO request to be signed
 		RequestedAuthnContext: &saml.RequestedAuthnContext{
 			Comparison:           "minimum",
-			AuthnContextClassRef: "https://www.spid.gov.it/SpidL1",
+			AuthnContextClassRef: "https://www.spid.gov.it/SpidL2",
 		},
+		ForceAuthn: true,
 	})
 	app := http.HandlerFunc(hello)
-	slo := http.HandlerFunc(logout)
+	slo := http.HandlerFunc(logoutL2)
 
 	http.Handle("/hello", samlMiddleware.RequireAccount(app))
 	http.Handle("/saml/", samlMiddleware)
