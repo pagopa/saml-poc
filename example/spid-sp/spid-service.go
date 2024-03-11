@@ -59,6 +59,18 @@ const tmplUser = `<p>This page shows details about the currently logged user.</p
 </table>
 `
 
+func index(w http.ResponseWriter, r *http.Request) {
+	session, _ := samlMiddleware.Session.GetSession(r)
+	if session != nil {
+		w.Header().Add("Location", "/hello")
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+	t := template.Must(template.New("index").Parse(tmplLayout))
+	button := samlMiddleware.ServiceProvider.GetButton("/hello")
+	t.Execute(w, template.HTML(button))
+}
+
 func hello(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.New("index").Parse(tmplLayout))
 
@@ -96,7 +108,7 @@ func logoutL2(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err) // TODO handle error
 	}
-	w.Header().Add("Location", "/hello")
+	w.Header().Add("Location", "/")
 	w.WriteHeader(http.StatusFound)
 }
 
@@ -152,7 +164,9 @@ func main() {
 	})
 	app := http.HandlerFunc(hello)
 	slo := http.HandlerFunc(logoutL2)
+	home := http.HandlerFunc(index)
 
+	http.Handle("/", home)
 	http.Handle("/hello", samlMiddleware.RequireAccount(app))
 	http.Handle("/saml/", samlMiddleware)
 	http.Handle("/logout", slo)

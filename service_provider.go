@@ -143,6 +143,24 @@ const DefaultValidDuration = time.Hour * 24 * 2
 // DefaultCacheDuration is how long we ask the IDP to cache the SP metadata.
 const DefaultCacheDuration = time.Hour * 24 * 1
 
+const tmplButton = `
+{{ range $entityID, $url := . }}
+<p><a class="btn btn-primary" href="{{ $url }}">Login with SPID</a></p>
+{{ end }}
+`
+
+// GetButton returns the rendered HTML of the SPID button.
+func (sp *ServiceProvider) GetButton(pattern string) string {
+	items := make(map[string]string) // entityID: URL
+
+	items[sp.EntityID] = fmt.Sprintf(pattern)
+
+	t := template.Must(template.New("button").Parse(tmplButton))
+	var button bytes.Buffer
+	t.Execute(&button, items)
+	return button.String()
+}
+
 func (sp *ServiceProvider) SignMetadata(ed []byte) []byte {
 	signer, err := signedxml.NewSigner(string(ed))
 	if err != nil {
