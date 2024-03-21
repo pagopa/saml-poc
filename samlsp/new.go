@@ -4,6 +4,7 @@ package samlsp
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -91,9 +92,18 @@ func DefaultRequestTracker(opts Options, serviceProvider *saml.ServiceProvider) 
 // DefaultServiceProvider returns the default saml.ServiceProvider for the provided
 // options.
 func DefaultServiceProvider(opts Options) saml.ServiceProvider {
+
 	metadataURL := opts.URL.ResolveReference(&url.URL{Path: "saml/metadata"})
 	acsURL := opts.URL.ResolveReference(&url.URL{Path: "saml/acs"})
 	sloURL := opts.URL.ResolveReference(&url.URL{Path: "saml/slo"})
+
+	fmt.Println(opts.URL.String())
+
+	fmt.Println(metadataURL)
+
+	fmt.Println(acsURL)
+
+	fmt.Println(sloURL)
 
 	var forceAuthn *bool
 	if opts.ForceAuthn {
