@@ -59,15 +59,44 @@ const tmplUser = `<p>This page shows details about the currently logged user.</p
 </table>
 `
 
+const tmplUser_2 = `<p>This page shows details about the currently logged user.</p>
+<p><a class="btn btn-primary" href="/v2/logout">Logout</a></p>
+<h1>NameID:</h1>
+<p>{{ .fiscalNumber}}</p>
+<h2>SPID Level:</h2>
+<p>{{ .Level }}</p>
+<h2>Attributes</h2>
+<table>
+  <tr>
+    <th>Key</th>
+    <th>Value</th>
+  </tr>
+  {{ range $key, $val := . }}
+  <tr>
+        <td>{{ $key }}</td>
+        <td>{{ $val }}</td>
+	  </tr>
+  {{ end }}
+</table>
+`
+
 func index(w http.ResponseWriter, r *http.Request) {
 	session, _ := samlMiddleware.Session.GetSession(r)
+
+	// lettura di variabile d'ambiente per il base path
+	base_path := os.Getenv("BASE_PATH") // qualcosa tipo v2
+
+	if base_path != "" {
+		base_path = "/" + base_path
+	}
+
 	if session != nil {
-		w.Header().Add("Location", "/hello")
+		w.Header().Add("Location", base_path+"/hello")
 		w.WriteHeader(http.StatusFound)
 		return
 	}
 	t := template.Must(template.New("index").Parse(tmplLayout))
-	button := samlMiddleware.ServiceProvider.GetButton("/hello")
+	button := samlMiddleware.ServiceProvider.GetButton(base_path + "/hello")
 	t.Execute(w, template.HTML(button))
 }
 
@@ -78,7 +107,16 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	session := samlsp.AttributesFromContext(r.Context())
 	fmt.Println(session)
 
-	template.Must(template.New("user").Parse(tmplUser)).Execute(&t2, session)
+	// lettura di variabile d'ambiente per il base path
+	base_path := os.Getenv("BASE_PATH") // qualcosa tipo v2
+	tmpToUse := tmplUser
+
+	if base_path != "" {
+		tmpToUse = tmplUser_2
+	}
+
+	template.Must(template.New("user").Parse(tmpToUse)).Execute(&t2, session)
+
 	t.Execute(w, template.HTML(t2.String()))
 	//fmt.Fprintf(w, "Hello, %s!", samlsp.AttributeFromContext(r.Context(), "fiscalNumber"))
 }
@@ -97,7 +135,14 @@ func logout(w http.ResponseWriter, r *http.Request) {
 		panic(err) // TODO handle error
 	}
 
-	w.Header().Add("Location", url.String())
+	// lettura di variabile d'ambiente per il base path
+	base_path := os.Getenv("BASE_PATH") // qualcosa tipo v2
+
+	if base_path != "" {
+		base_path = "/" + base_path
+	}
+
+	w.Header().Add("Location", url.String()+base_path)
 	w.WriteHeader(http.StatusFound)
 }
 
@@ -108,7 +153,15 @@ func logoutL2(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err) // TODO handle error
 	}
-	w.Header().Add("Location", "/")
+
+	// lettura di variabile d'ambiente per il base path
+	base_path := os.Getenv("BASE_PATH") // qualcosa tipo v2
+
+	if base_path != "" {
+		base_path = "/" + base_path
+	}
+
+	w.Header().Add("Location", base_path)
 	w.WriteHeader(http.StatusFound)
 }
 
@@ -145,7 +198,14 @@ func main() {
 		panic(err) // TODO handle error
 	}
 
-	rootURL, err := url.Parse("http://localhost:8080")
+	// lettura di variabile d'ambiente per il base path
+	base_path := os.Getenv("BASE_PATH") // qualcosa tipo v2
+
+	if base_path != "" {
+		base_path = "/" + base_path
+	}
+
+	rootURL, err := url.Parse("http://localhost:8080" + base_path + "/")
 	if err != nil {
 		panic(err) // TODO handle error
 	}
@@ -166,10 +226,10 @@ func main() {
 	slo := http.HandlerFunc(logoutL2)
 	home := http.HandlerFunc(index)
 
-	http.Handle("/", home)
-	http.Handle("/hello", samlMiddleware.RequireAccount(app))
-	http.Handle("/saml/", samlMiddleware)
-	http.Handle("/logout", slo)
+	http.Handle(base_path+"/", home)                                    // /v2
+	http.Handle(base_path+"/hello", samlMiddleware.RequireAccount(app)) // /v2/hello
+	http.Handle(base_path+"/saml/", samlMiddleware)                     // /v2/saml/
+	http.Handle(base_path+"/logout", slo)                               // /v2/logout
 
 	server := &http.Server{
 		Addr:              ":8080",
