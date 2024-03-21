@@ -99,7 +99,7 @@ func DefaultServiceProvider(opts Options) saml.ServiceProvider {
 	if opts.ForceAuthn {
 		forceAuthn = &opts.ForceAuthn
 	}
-	signatureMethod := dsig.RSASHA1SignatureMethod
+	signatureMethod := dsig.RSASHA512SignatureMethod
 	if !opts.SignRequest {
 		signatureMethod = ""
 	}
@@ -140,7 +140,7 @@ func DefaultServiceProvider(opts Options) saml.ServiceProvider {
 func New(opts Options) (*Middleware, error) {
 	m := &Middleware{
 		ServiceProvider: DefaultServiceProvider(opts),
-		Binding:         "",
+		Binding:         saml.HTTPPostBinding,
 		ResponseBinding: saml.HTTPPostBinding,
 		OnError:         DefaultOnError,
 		Session:         DefaultSessionProvider(opts),
