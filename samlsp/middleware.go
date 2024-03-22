@@ -90,10 +90,10 @@ func (m *Middleware) ServeACS(w http.ResponseWriter, r *http.Request) {
 		possibleRequestIDs = append(possibleRequestIDs, "")
 	}
 
-	trackedRequests := m.RequestTracker.GetTrackedRequests(r)
+	/*trackedRequests := m.RequestTracker.GetTrackedRequests(r)
 	for _, tr := range trackedRequests {
 		possibleRequestIDs = append(possibleRequestIDs, tr.SAMLRequestID)
-	}
+	}*/
 
 	assertion, err := m.ServiceProvider.ParseResponse(r, possibleRequestIDs)
 	if err != nil {
@@ -158,6 +158,7 @@ func (m *Middleware) HandleStartAuthFlow(w http.ResponseWriter, r *http.Request)
 	// this means that we cannot use a JWT because it is way to long. Instead
 	// we set a signed cookie that encodes the original URL which we'll check
 	// against the SAML response when we get it.
+
 	relayState, err := m.RequestTracker.TrackRequest(w, r, authReq.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -195,7 +196,7 @@ func (m *Middleware) HandleStartAuthFlow(w http.ResponseWriter, r *http.Request)
 
 // CreateSessionFromAssertion is invoked by ServeHTTP when we have a new, valid SAML assertion.
 func (m *Middleware) CreateSessionFromAssertion(w http.ResponseWriter, r *http.Request, assertion *saml.Assertion, redirectURI string) {
-	if trackedRequestIndex := r.Form.Get("RelayState"); trackedRequestIndex != "" {
+	/*if trackedRequestIndex := r.Form.Get("RelayState"); trackedRequestIndex != "" {
 		trackedRequest, err := m.RequestTracker.GetTrackedRequest(r, trackedRequestIndex)
 		if err != nil {
 			if err == http.ErrNoCookie && m.ServiceProvider.AllowIDPInitiated {
@@ -214,7 +215,7 @@ func (m *Middleware) CreateSessionFromAssertion(w http.ResponseWriter, r *http.R
 
 			redirectURI = trackedRequest.URI
 		}
-	}
+	}*/
 
 	if err := m.Session.CreateSession(w, r, assertion); err != nil {
 		m.OnError(w, r, err)

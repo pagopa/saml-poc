@@ -1033,7 +1033,7 @@ func (sp *ServiceProvider) parseResponse(responseEl *etree.Element, possibleRequ
 			}
 		}
 
-		requestIDvalid := false
+		/*requestIDvalid := false
 		if sp.AllowIDPInitiated {
 			requestIDvalid = true
 		} else {
@@ -1045,7 +1045,7 @@ func (sp *ServiceProvider) parseResponse(responseEl *etree.Element, possibleRequ
 		}
 		if !requestIDvalid {
 			return nil, fmt.Errorf("`InResponseTo` does not match any of the possible request IDs (expected %v)", possibleRequestIDs)
-		}
+		}*/
 
 		if response.IssueInstant.Add(MaxIssueDelay).Before(now) {
 			return nil, fmt.Errorf("response IssueInstant expired at %s", response.IssueInstant.Add(MaxIssueDelay))
@@ -1193,7 +1193,7 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 		return fmt.Errorf("issuer is not %q", sp.IDPMetadata.EntityID)
 	}
 	for _, subjectConfirmation := range assertion.Subject.SubjectConfirmations {
-		requestIDvalid := false
+		/*requestIDvalid := false
 
 		// We *DO NOT* validate InResponseTo when AllowIDPInitiated is set. Here's why:
 		//
@@ -1222,7 +1222,7 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 			if !requestIDvalid {
 				return fmt.Errorf("assertion SubjectConfirmation one of the possible request IDs (%v)", possibleRequestIDs)
 			}
-		}
+		}*/
 		if subjectConfirmation.SubjectConfirmationData.Recipient != sp.AcsURL.String() {
 			return fmt.Errorf("assertion SubjectConfirmation Recipient is not %s", sp.AcsURL.String())
 		}
