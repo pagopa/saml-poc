@@ -157,9 +157,7 @@ func logoutL2(w http.ResponseWriter, r *http.Request) {
 	// lettura di variabile d'ambiente per il base path
 	base_path := os.Getenv("BASE_PATH") // qualcosa tipo v2
 
-	if base_path != "" {
-		base_path = "/" + base_path
-	}
+	base_path = "/" + base_path
 
 	w.Header().Add("Location", base_path)
 	w.WriteHeader(http.StatusFound)
@@ -188,6 +186,7 @@ func main() {
 	}*/
 
 	// Read IDP Metadata from file
+	//data, err := os.ReadFile("agid-idp.xml")
 	data, err := os.ReadFile("idp.xml")
 
 	if err != nil {
@@ -205,6 +204,7 @@ func main() {
 		base_path = "/" + base_path
 	}
 
+	//rootURL, err := url.Parse("https://dev.oneidentity.pagopa.it" + base_path + "/")
 	rootURL, err := url.Parse("http://localhost:8080" + base_path + "/")
 	if err != nil {
 		panic(err) // TODO handle error

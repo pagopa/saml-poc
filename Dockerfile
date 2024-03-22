@@ -16,6 +16,9 @@ RUN cd example && go get && go build -ldflags="-s -w"
 #RUN go test -v
 
 FROM docker.io/golang:${GO_VERSION}
+#ARG BASE_PATH
+#ENV BASE_PATH "v2"
+
 RUN apk update && apk add xmlsec-dev libxml2-dev openssl-dev
 
 RUN mkdir /usr/local/bin/spid_go
