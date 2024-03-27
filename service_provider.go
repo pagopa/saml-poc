@@ -25,6 +25,7 @@ import (
 
 	"github.com/crewjam/saml/logger"
 	"github.com/crewjam/saml/xmlenc"
+	"github.com/moov-io/signedxml"
 )
 
 // NameIDFormat is the format of the id
@@ -62,6 +63,7 @@ type SignatureVerifier interface {
 //
 // See the example directory for an example of a web application using
 // the service provider interface.
+
 type ServiceProvider struct {
 	// Entity ID is optional - if not specified then MetadataURL will be used
 	EntityID string
@@ -129,17 +131,50 @@ type ServiceProvider struct {
 // issued by the IDP and the time it is received by ParseResponse. This is used
 // to prevent old responses from being replayed (while allowing for some clock
 // drift between the SP and IDP).
-var MaxIssueDelay = time.Second * 90
+// var MaxIssueDelay = time.Second * 90
+// TODO reset: Set Max IssueDelay to 7 days only for load test purposes.
+var MaxIssueDelay = time.Hour * 24 * 7
 
 // MaxClockSkew allows for leeway for clock skew between the IDP and SP when
 // validating assertions. It defaults to 180 seconds (matches shibboleth).
-var MaxClockSkew = time.Second * 180
+// TODO reset: Set Max ClockSkew to 7 days only for load test purposes.
+var MaxClockSkew = time.Hour * 24 * 7
 
 // DefaultValidDuration is how long we assert that the SP metadata is valid.
 const DefaultValidDuration = time.Hour * 24 * 2
 
 // DefaultCacheDuration is how long we ask the IDP to cache the SP metadata.
 const DefaultCacheDuration = time.Hour * 24 * 1
+
+const tmplButton = `
+{{ range $entityID, $url := . }}
+<p><a class="btn btn-primary" href="{{ $url }}">Login with SPID</a></p>
+{{ end }}
+`
+
+// GetButton returns the rendered HTML of the SPID button.
+func (sp *ServiceProvider) GetButton(pattern string) string {
+	items := make(map[string]string) // entityID: URL
+
+	items[sp.EntityID] = fmt.Sprintf(pattern)
+
+	t := template.Must(template.New("button").Parse(tmplButton))
+	var button bytes.Buffer
+	t.Execute(&button, items)
+	return button.String()
+}
+
+func (sp *ServiceProvider) SignMetadata(ed []byte) []byte {
+	signer, err := signedxml.NewSigner(string(ed))
+	if err != nil {
+		return nil
+	}
+	signedXML, err := signer.Sign(sp.Key)
+	if err != nil {
+		return nil
+	}
+	return []byte(signedXML)
+}
 
 // Metadata returns the service provider metadata
 func (sp *ServiceProvider) Metadata() *EntityDescriptor {
@@ -150,6 +185,9 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 
 	authnRequestsSigned := len(sp.SignatureMethod) > 0
 	wantAssertionsSigned := true
+	isDefault := true
+	notDefault := false
+	isRequired := true
 	validUntil := TimeNow().Add(validDuration)
 
 	var keyDescriptors []KeyDescriptor
@@ -200,9 +238,47 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 	}
 
 	return &EntityDescriptor{
-		EntityID:   firstSet(sp.EntityID, sp.MetadataURL.String()),
-		ValidUntil: validUntil,
-
+		EntityID:      firstSet(sp.EntityID, sp.MetadataURL.String()),
+		ValidUntil:    validUntil,
+		SpidNamespace: "https://spid.gov.it/saml-extensions",
+		Signature: &Signature{
+			Xmls: "http://www.w3.org/2000/09/xmldsig#",
+			SignedInfo: SignedInfo{
+				CanonicalizationMethod: Algorithm{
+					Algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#",
+				},
+				SignatureMethod: Algorithm{
+					Algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
+				},
+				Reference: Reference{
+					URI: "",
+					Transforms: Transforms{
+						Transform: []Algorithm{
+							{
+								Algorithm: "http://www.w3.org/2000/09/xmldsig#enveloped-signature",
+							},
+							{
+								Algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#",
+							},
+						},
+					},
+					DigestMethod: Algorithm{
+						Algorithm: "http://www.w3.org/2001/04/xmlenc#sha512",
+					},
+					DigestValue: "",
+				},
+			},
+			SignatureValue: "",
+			KeyInfo: KeyInfo{
+				X509Data: X509Data{
+					X509Certificates: []X509Certificate{
+						{
+							Data: base64.StdEncoding.EncodeToString(sp.Certificate.Raw),
+						},
+					},
+				},
+			},
+		},
 		SPSSODescriptors: []SPSSODescriptor{
 			{
 				SSODescriptor: SSODescriptor{
@@ -219,17 +295,102 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 
 				AssertionConsumerServices: []IndexedEndpoint{
 					{
-						Binding:  HTTPPostBinding,
-						Location: sp.AcsURL.String(),
-						Index:    1,
+						Binding:   HTTPPostBinding,
+						Location:  sp.AcsURL.String(),
+						Index:     0,
+						IsDefault: &isDefault,
 					},
 					{
-						Binding:  HTTPArtifactBinding,
-						Location: sp.AcsURL.String(),
-						Index:    2,
+						Binding:   HTTPRedirectBinding,
+						Location:  sp.AcsURL.String(),
+						Index:     1,
+						IsDefault: &notDefault,
+					},
+				},
+				AttributeConsumingServices: []AttributeConsumingService{
+					{
+						Index:     0,
+						IsDefault: &isDefault,
+						ServiceNames: []LocalizedName{
+							{
+								Lang:  "it",
+								Value: "Service 1",
+							},
+						},
+						ServiceDescriptions: []LocalizedName{
+							{
+								Lang:  "it",
+								Value: "Service 1 mock description",
+							},
+						},
+						RequestedAttributes: []RequestedAttribute{
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "FiscalNumber",
+									Name:         "fiscalNumber",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "Name",
+									Name:         "name",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "FamilyName",
+									Name:         "familyName",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+							{
+								IsRequired: &isRequired,
+								Attribute: Attribute{
+									FriendlyName: "DateOfBirth",
+									Name:         "dateOfBirth",
+									NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+								},
+							},
+						},
 					},
 				},
 			},
+		},
+		Organization: &Organization{
+			OrganizationNames: []LocalizedName{
+				{
+					Lang:  "it",
+					Value: "Foobar",
+				},
+			},
+			OrganizationDisplayNames: []LocalizedName{
+				{
+					Lang:  "it",
+					Value: "Foobar",
+				},
+			},
+			OrganizationURLs: []LocalizedURI{
+				{
+					Lang:  "it",
+					Value: "https://www.foobar.it/",
+				},
+			},
+		},
+		ContactPerson: &ContactPerson{
+			ContactType: "other",
+			Extensions: Extension{
+				IPACode: "c_h501",
+			},
+			Company:          "Foobar",
+			GivenName:        "GivenName",
+			SurName:          "SurName",
+			EmailAddresses:   []string{"asd@example.com", "ads@example.com"},
+			TelephoneNumbers: []string{"+393487726485", "+393487726235"},
 		},
 	}
 }
@@ -404,21 +565,24 @@ func (sp *ServiceProvider) MakeArtifactResolveRequest(artifactID string) (*Artif
 // that uses the specified binding (HTTPRedirectBinding or HTTPPostBinding)
 func (sp *ServiceProvider) MakeAuthenticationRequest(idpURL string, binding string, resultBinding string) (*AuthnRequest, error) {
 
-	allowCreate := true
+	//allowCreate := true
 	nameIDFormat := sp.nameIDFormat()
 	req := AuthnRequest{
-		AssertionConsumerServiceURL: sp.AcsURL.String(),
-		Destination:                 idpURL,
-		ProtocolBinding:             resultBinding, // default binding for the response
-		ID:                          fmt.Sprintf("id-%x", randomBytes(20)),
-		IssueInstant:                TimeNow(),
-		Version:                     "2.0",
+		AssertionConsumerServiceURL:    sp.AcsURL.String(),
+		AssertionConsumerServiceIndex:  "0",
+		AttributeConsumingServiceIndex: "0",
+		Destination:                    idpURL,
+		ProtocolBinding:                resultBinding, // default binding for the response
+		ID:                             fmt.Sprintf("id-%x", randomBytes(20)),
+		IssueInstant:                   TimeNow(),
+		Version:                        "2.0",
 		Issuer: &Issuer{
-			Format: "urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
-			Value:  firstSet(sp.EntityID, sp.MetadataURL.String()),
+			Format:        "urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
+			Value:         firstSet(sp.EntityID, sp.MetadataURL.String()),
+			NameQualifier: "test",
 		},
 		NameIDPolicy: &NameIDPolicy{
-			AllowCreate: &allowCreate,
+			//AllowCreate: &allowCreate,
 			// TODO(ross): figure out exactly policy we need
 			// urn:mace:shibboleth:1.0:nameIdentifier
 			// urn:oasis:names:tc:SAML:2.0:nameid-format:transient
@@ -872,7 +1036,7 @@ func (sp *ServiceProvider) parseResponse(responseEl *etree.Element, possibleRequ
 			}
 		}
 
-		requestIDvalid := false
+		/*requestIDvalid := false
 		if sp.AllowIDPInitiated {
 			requestIDvalid = true
 		} else {
@@ -883,8 +1047,8 @@ func (sp *ServiceProvider) parseResponse(responseEl *etree.Element, possibleRequ
 			}
 		}
 		if !requestIDvalid {
-			return nil, fmt.Errorf("`InResponseTo` does not match any of the possible request IDs (expected %v)", possibleRequestIDs)
-		}
+			return nil, fmt.Errorf(" (expected %v)", possibleRequestIDs)
+		}*/
 
 		if response.IssueInstant.Add(MaxIssueDelay).Before(now) {
 			return nil, fmt.Errorf("response IssueInstant expired at %s", response.IssueInstant.Add(MaxIssueDelay))
@@ -1032,7 +1196,7 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 		return fmt.Errorf("issuer is not %q", sp.IDPMetadata.EntityID)
 	}
 	for _, subjectConfirmation := range assertion.Subject.SubjectConfirmations {
-		requestIDvalid := false
+		/*requestIDvalid := false
 
 		// We *DO NOT* validate InResponseTo when AllowIDPInitiated is set. Here's why:
 		//
@@ -1061,7 +1225,7 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 			if !requestIDvalid {
 				return fmt.Errorf("assertion SubjectConfirmation one of the possible request IDs (%v)", possibleRequestIDs)
 			}
-		}
+		}*/
 		if subjectConfirmation.SubjectConfirmationData.Recipient != sp.AcsURL.String() {
 			return fmt.Errorf("assertion SubjectConfirmation Recipient is not %s", sp.AcsURL.String())
 		}

@@ -4,6 +4,7 @@ package samlsp
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -91,15 +92,24 @@ func DefaultRequestTracker(opts Options, serviceProvider *saml.ServiceProvider) 
 // DefaultServiceProvider returns the default saml.ServiceProvider for the provided
 // options.
 func DefaultServiceProvider(opts Options) saml.ServiceProvider {
+
 	metadataURL := opts.URL.ResolveReference(&url.URL{Path: "saml/metadata"})
 	acsURL := opts.URL.ResolveReference(&url.URL{Path: "saml/acs"})
 	sloURL := opts.URL.ResolveReference(&url.URL{Path: "saml/slo"})
+
+	fmt.Println(opts.URL.String())
+
+	fmt.Println(metadataURL)
+
+	fmt.Println(acsURL)
+
+	fmt.Println(sloURL)
 
 	var forceAuthn *bool
 	if opts.ForceAuthn {
 		forceAuthn = &opts.ForceAuthn
 	}
-	signatureMethod := dsig.RSASHA1SignatureMethod
+	signatureMethod := dsig.RSASHA512SignatureMethod
 	if !opts.SignRequest {
 		signatureMethod = ""
 	}
@@ -140,12 +150,14 @@ func DefaultServiceProvider(opts Options) saml.ServiceProvider {
 func New(opts Options) (*Middleware, error) {
 	m := &Middleware{
 		ServiceProvider: DefaultServiceProvider(opts),
-		Binding:         "",
+		Binding:         saml.HTTPPostBinding,
 		ResponseBinding: saml.HTTPPostBinding,
 		OnError:         DefaultOnError,
 		Session:         DefaultSessionProvider(opts),
 	}
 	m.RequestTracker = DefaultRequestTracker(opts, &m.ServiceProvider)
+	m.ServiceProvider.AuthnNameIDFormat = "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+
 	if opts.UseArtifactResponse {
 		m.ResponseBinding = saml.HTTPArtifactBinding
 	}
