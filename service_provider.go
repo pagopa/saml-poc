@@ -131,11 +131,14 @@ type ServiceProvider struct {
 // issued by the IDP and the time it is received by ParseResponse. This is used
 // to prevent old responses from being replayed (while allowing for some clock
 // drift between the SP and IDP).
-var MaxIssueDelay = time.Second * 90
+// var MaxIssueDelay = time.Second * 90
+// TODO reset: Set Max IssueDelay to 7 days only for load test purposes.
+var MaxIssueDelay = time.Hour * 24 * 7
 
 // MaxClockSkew allows for leeway for clock skew between the IDP and SP when
 // validating assertions. It defaults to 180 seconds (matches shibboleth).
-var MaxClockSkew = time.Second * 180
+// TODO reset: Set Max ClockSkew to 7 days only for load test purposes.
+var MaxClockSkew = time.Hour * 24 * 7
 
 // DefaultValidDuration is how long we assert that the SP metadata is valid.
 const DefaultValidDuration = time.Hour * 24 * 2
@@ -1044,7 +1047,7 @@ func (sp *ServiceProvider) parseResponse(responseEl *etree.Element, possibleRequ
 			}
 		}
 		if !requestIDvalid {
-			return nil, fmt.Errorf("`InResponseTo` does not match any of the possible request IDs (expected %v)", possibleRequestIDs)
+			return nil, fmt.Errorf(" (expected %v)", possibleRequestIDs)
 		}*/
 
 		if response.IssueInstant.Add(MaxIssueDelay).Before(now) {

@@ -186,8 +186,8 @@ func main() {
 	}*/
 
 	// Read IDP Metadata from file
-	//data, err := os.ReadFile("agid-idp.xml")
-	data, err := os.ReadFile("idp.xml")
+	data, err := os.ReadFile("agid-idp.xml")
+	//data, err := os.ReadFile("idp.xml")
 
 	if err != nil {
 		panic(err) // TODO handle error
@@ -204,8 +204,8 @@ func main() {
 		base_path = "/" + base_path
 	}
 
-	//rootURL, err := url.Parse("https://dev.oneidentity.pagopa.it" + base_path + "/")
-	rootURL, err := url.Parse("http://localhost:8080" + base_path + "/")
+	rootURL, err := url.Parse("https://dev.oneidentity.pagopa.it" + base_path + "/")
+	//rootURL, err := url.Parse("http://localhost:8080" + base_path + "/")
 	if err != nil {
 		panic(err) // TODO handle error
 	}
