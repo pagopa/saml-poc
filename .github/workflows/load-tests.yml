@@ -3,13 +3,17 @@ name: "Load-Tests"
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Choose environment'
+      test_name:
+        description: 'Choose load test'
         type: choice
         required: true
         default: dev
         options:
-        - dev
+        - 01-metadata.js
+        - 02-requests.js
+        - 03-response.js
+        - 04-request-response.js
+        - 05-metadata-request-response.js
 
 permissions:
   contents: read
@@ -19,7 +23,6 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch'}}
     name: load-tests
     runs-on: ubuntu-22.04
-    environment: ${{ inputs.environment }}
 
     steps:
       - name: Checkout
@@ -28,3 +31,5 @@ jobs:
 
       - name: Load tests
         uses: ./.github/workflows/load-tests
+        with:
+          test_name : ${{ inputs.test_name }}
