@@ -18,7 +18,7 @@ export const options = {
       exec: 'saml_login',
 
       // Start iterations per `timeUnit`
-      startRate: rate(TOTAL_MINIMUM_RPS,0.45),
+      startRate: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)),
 
       // Start `startRate` iterations per seconds
       timeUnit: '1s',
@@ -31,13 +31,13 @@ export const options = {
 
       stages: [
         // Start 50 iterations per `timeUnit` for the first minute.
-        { target: rate(TOTAL_MINIMUM_RPS + 10,0.45), duration: '1m' },
+        { target: Math.floor(rate(TOTAL_MINIMUM_RPS + 10,0.45)), duration: '1m' },
 
         // // Linearly ramp-up to starting 100 iterations per `timeUnit` over the following two minutes.
-        { target: rate(TOTAL_MINIMUM_RPS + 20,0.45), duration: '1m' },
+        { target: Math.floor(rate(TOTAL_MINIMUM_RPS + 20,0.45)), duration: '1m' },
 
         // // Continue starting 300 iterations per `timeUnit` for the following two minutes.
-        { target: rate(TOTAL_MAXIMUM_RPS,0.45), duration: '2m' }
+        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '2m' }
       ],
     },
     ramping_up_acs: {
@@ -45,7 +45,7 @@ export const options = {
 
         exec: 'saml_acs',
   
-        startRate: rate(TOTAL_MINIMUM_RPS,0.45),
+        startRate: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)),
 
         // Start `startRate` iterations per seconds
         timeUnit: '1s',
@@ -58,13 +58,13 @@ export const options = {
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
-          { target: rate(TOTAL_MINIMUM_RPS + 10,0.45), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MINIMUM_RPS + 10,0.45)), duration: '1m' },
   
           // // Linearly ramp-up to starting 100 iterations per `timeUnit` over the following two minutes.
-          { target: rate(TOTAL_MINIMUM_RPS + 20,0.45), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MINIMUM_RPS + 20,0.45)), duration: '1m' },
   
           // // Continue starting 300 iterations per `timeUnit` for the following two minutes.
-          { target: rate(TOTAL_MAXIMUM_RPS,0.45), duration: '2m' }
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '2m' }
         ],
       },
       ramping_up_metadata: {
@@ -72,7 +72,7 @@ export const options = {
 
         exec: 'saml_metadata',
   
-        startRate: rate(TOTAL_MINIMUM_RPS,0.10),
+        startRate: Math.floor(rate(TOTAL_MINIMUM_RPS,0.10)),
 
         // Start `startRate` iterations per seconds
         timeUnit: '1s',
@@ -85,13 +85,13 @@ export const options = {
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
-          { target: rate(TOTAL_MINIMUM_RPS + 10,0.10), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MINIMUM_RPS + 10,0.10)), duration: '1m' },
   
           // // Linearly ramp-up to starting 100 iterations per `timeUnit` over the following two minutes.
-          { target: rate(TOTAL_MINIMUM_RPS + 20,0.10), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MINIMUM_RPS + 20,0.10)), duration: '1m' },
   
           // // Continue starting 300 iterations per `timeUnit` for the following two minutes.
-          { target: rate(TOTAL_MAXIMUM_RPS,0.10), duration: '2m' }
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)), duration: '2m' }
         ],
       },
     constant_login: {
@@ -103,7 +103,7 @@ export const options = {
       duration: '4m',
 
       // test rate
-      rate: rate(TOTAL_MAXIMUM_RPS,0.45),
+      rate: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)),
 
       // It should start `rate` iterations per second
       timeUnit: '1s',
@@ -127,7 +127,7 @@ export const options = {
         duration: '4m',
   
         // test rate
-        rate: rate(TOTAL_MAXIMUM_RPS,0.45),
+        rate: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)),
   
         // It should start `rate` iterations per second
         timeUnit: '1s',
@@ -151,7 +151,7 @@ export const options = {
         duration: '4m',
   
         // test rate
-        rate: rate(TOTAL_MAXIMUM_RPS,0.10),
+        rate: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)),
   
         // It should start `rate` iterations per second
         timeUnit: '1s',
@@ -173,7 +173,7 @@ export const options = {
 
 
       // Start iterations per `timeUnit`
-      startRate: rate(TOTAL_MAXIMUM_RPS,0.45),
+      startRate: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)),
 
       // Start `startRate` iterations per seconds
       timeUnit: '1s',
@@ -188,13 +188,13 @@ export const options = {
 
       stages: [
         // Start 300 iterations per `timeUnit` for four minutes.
-        { target: rate(TOTAL_MAXIMUM_RPS - 20,0.45), duration: '1m' },
+        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS - 20,0.45)), duration: '1m' },
 
         // Linearly ramp-down to starting 100 iterations per `timeUnit` over the following two minutes.
-        { target: rate(TOTAL_MAXIMUM_RPS - 30,0.45), duration: '1m' },
+        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS - 30,0.45)), duration: '1m' },
 
         // Continue starting 50 iterations per `timeUnit` for the following minute.
-        { target: rate(TOTAL_MINIMUM_RPS,0.45), duration: '2m' }
+        { target: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)), duration: '2m' }
       ],
     },
     ramping_down_acs: {
@@ -204,7 +204,7 @@ export const options = {
 
   
         // Start iterations per `timeUnit`
-        startRate: rate(TOTAL_MAXIMUM_RPS,0.45),
+        startRate: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)),
 
         // Start `startRate` iterations per seconds
         timeUnit: '1s',
@@ -219,13 +219,13 @@ export const options = {
   
         stages: [
           // Start 300 iterations per `timeUnit` for four minutes.
-          { target: rate(TOTAL_MAXIMUM_RPS - 20,0.45), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS - 20,0.45)), duration: '1m' },
   
           // Linearly ramp-down to starting 100 iterations per `timeUnit` over the following two minutes.
-          { target: rate(TOTAL_MAXIMUM_RPS - 30,0.45), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS - 30,0.45)), duration: '1m' },
   
           // Continue starting 50 iterations per `timeUnit` for the following minute.
-          { target: rate(TOTAL_MINIMUM_RPS,0.45), duration: '2m' }
+          { target: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)), duration: '2m' }
         ],
       },
       ramping_down_acs: {
@@ -235,7 +235,7 @@ export const options = {
 
   
         // Start iterations per `timeUnit`
-        startRate: rate(TOTAL_MAXIMUM_RPS,0.10),
+        startRate: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)),
 
         // Start `startRate` iterations per seconds
         timeUnit: '1s',
@@ -250,13 +250,13 @@ export const options = {
   
         stages: [
           // Start 300 iterations per `timeUnit` for four minutes.
-          { target: rate(TOTAL_MAXIMUM_RPS - 20,0.10), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS - 20,0.10)), duration: '1m' },
   
           // Linearly ramp-down to starting 100 iterations per `timeUnit` over the following two minutes.
-          { target: rate(TOTAL_MAXIMUM_RPS - 30,0.10), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS - 30,0.10)), duration: '1m' },
   
           // Continue starting 50 iterations per `timeUnit` for the following minute.
-          { target: rate(TOTAL_MINIMUM_RPS,0.10), duration: '2m' }
+          { target: Math.floor(rate(TOTAL_MINIMUM_RPS,0.10)), duration: '2m' }
         ],
       },
   },
