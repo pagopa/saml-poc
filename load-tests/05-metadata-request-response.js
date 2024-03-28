@@ -228,7 +228,7 @@ export const options = {
           { target: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)), duration: '2m' }
         ],
       },
-      ramping_down_acs: {
+      ramping_down_metadata: {
         executor: 'ramping-arrival-rate',
 
         exec: 'saml_metadata',
