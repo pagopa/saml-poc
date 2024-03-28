@@ -12,6 +12,5 @@ runs:
     - name: Run local k6 test
       #grafana/k6-action@0.3.0
       uses: grafana/k6-action@2bd221c807b7cdbe4bb3abc6b3fa4d2da499fa9b
-      working-directory: ./load-tests
       with:
-        filename: ${{ inputs.test_name }}
+        filename: load-tests/${{ inputs.test_name }}
