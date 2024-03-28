@@ -6,7 +6,7 @@ import { Counter } from 'k6/metrics';
 export const options = {
   discardResponseBodies: true,
   scenarios: {
-    ramping_up: {
+    /*ramping_up: {
       executor: 'ramping-arrival-rate',
 
       // Start iterations per `timeUnit`
@@ -31,12 +31,12 @@ export const options = {
         // // Continue starting 300 iterations per `timeUnit` for the following two minutes.
         { target: 50, duration: '2m' }
       ],
-    },
+    },*/
     constant: {
       executor: 'constant-arrival-rate',
 
       // test duration
-      duration: '4m',
+      duration: '2m',
 
       // test rate
       rate: 50,
@@ -51,10 +51,10 @@ export const options = {
       maxVUs: 300,
 
       // start time calculated on ramping scenarios termination time
-      startTime: '4m',
+      //startTime: '4m',
 
-    },
-    ramping_down: {
+    }
+    /*ramping_down: {
       executor: 'ramping-arrival-rate',
 
       // Start iterations per `timeUnit`
@@ -81,7 +81,7 @@ export const options = {
         // Continue starting 50 iterations per `timeUnit` for the following minute.
         { target: 10, duration: '2m' }
       ],
-    },
+    }*/,
   },
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'count'],
   thresholds: {
