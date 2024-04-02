@@ -31,7 +31,7 @@ export const options = {
 
       stages: [
         // Start 50 iterations per `timeUnit` for the first minute.
-        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '1m' }
+        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '5m' }
       ],
     },
     ramping_up_acs: {
@@ -52,7 +52,7 @@ export const options = {
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
-          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '1m' }
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '5m' }
         ],
       },
       ramping_up_metadata: {
@@ -73,7 +73,7 @@ export const options = {
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
-          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)), duration: '1m' },
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)), duration: '5m' },
         ],
       }
   },
