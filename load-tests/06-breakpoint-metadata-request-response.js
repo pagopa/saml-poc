@@ -2,8 +2,7 @@
 import http from 'k6/http';
 import { check } from 'k6';
 
-const TOTAL_MINIMUM_RPS = 10;
-const TOTAL_MAXIMUM_RPS = 300;
+const TOTAL_MAXIMUM_RPS = 1000;
 
 function rate(ref, percentage) {
   return ref * percentage;
@@ -17,21 +16,9 @@ export const options = {
 
       exec: 'saml_login',
 
-      // Start iterations per `timeUnit`
-      startRate: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)),
-
-      // Start `startRate` iterations per seconds
-      timeUnit: '1s',
-
-      // Pre-allocate necessary VUs.
-      preAllocatedVUs: 100,
-
-      // max allowed vu
-      maxVUs: 600,
-
       stages: [
         // Start 50 iterations per `timeUnit` for the first minute.
-        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '5m' }
+        { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '30m' }
       ],
     },
     ramping_up_acs: {
@@ -39,20 +26,9 @@ export const options = {
 
         exec: 'saml_acs',
   
-        startRate: Math.floor(rate(TOTAL_MINIMUM_RPS,0.45)),
-
-        // Start `startRate` iterations per seconds
-        timeUnit: '1s',
-  
-        // Pre-allocate necessary VUs.
-        preAllocatedVUs: 100,
-  
-        // max allowed vu
-        maxVUs: 600,
-  
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
-          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '5m' }
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.45)), duration: '30m' }
         ],
       },
       ramping_up_metadata: {
@@ -60,20 +36,9 @@ export const options = {
 
         exec: 'saml_metadata',
   
-        startRate: Math.floor(rate(TOTAL_MINIMUM_RPS,0.10)),
-
-        // Start `startRate` iterations per seconds
-        timeUnit: '1s',
-  
-        // Pre-allocate necessary VUs.
-        preAllocatedVUs: 100,
-  
-        // max allowed vu
-        maxVUs: 600,
-  
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
-          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)), duration: '5m' },
+          { target: Math.floor(rate(TOTAL_MAXIMUM_RPS,0.10)), duration: '30m' },
         ],
       }
   },
@@ -87,7 +52,7 @@ export const options = {
       {
         threshold: 'p(95) < 300', // string
         abortOnFail: true, // boolean
-        delayAbortEval: '10s', // string
+        delayAbortEval: '1m', // string
       },
     ],
 }
