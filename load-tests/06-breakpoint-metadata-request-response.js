@@ -3,7 +3,7 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 const TOTAL_MINIMUM_RPS = 10;
-const TOTAL_MAXIMUM_RPS = 150;
+const TOTAL_MAXIMUM_RPS = 300;
 
 function rate(ref, percentage) {
   return ref * percentage;
