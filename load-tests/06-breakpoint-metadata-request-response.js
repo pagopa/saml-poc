@@ -83,7 +83,7 @@ export const options = {
     // in order to display metrics for each scenario
     http_req_duration: ['max>=0'],
     checks: ['rate>=0'],
-    metric_name: [
+    http_req_duration: [
       {
         threshold: 'p(95) < 300', // string
         abortOnFail: true, // boolean
