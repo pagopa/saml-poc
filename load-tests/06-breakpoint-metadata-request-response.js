@@ -27,7 +27,7 @@ export const options = {
       preAllocatedVUs: 100,
 
       // max allowed vu
-      maxVUs: 200,
+      maxVUs: 600,
 
       stages: [
         // Start 50 iterations per `timeUnit` for the first minute.
@@ -48,7 +48,7 @@ export const options = {
         preAllocatedVUs: 100,
   
         // max allowed vu
-        maxVUs: 200,
+        maxVUs: 600,
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
@@ -69,7 +69,7 @@ export const options = {
         preAllocatedVUs: 100,
   
         // max allowed vu
-        maxVUs: 200,
+        maxVUs: 600,
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
