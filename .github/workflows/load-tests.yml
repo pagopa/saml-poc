@@ -14,6 +14,8 @@ on:
         - 03-response.js
         - 04-request-response.js
         - 05-metadata-request-response.js
+        - 06-breakpoint-metadata-request-response.js
+        
 
 permissions:
   contents: read
