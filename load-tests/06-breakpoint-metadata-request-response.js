@@ -3,7 +3,7 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 const TOTAL_MINIMUM_RPS = 10;
-const TOTAL_MAXIMUM_RPS = 300;
+const TOTAL_MAXIMUM_RPS = 150;
 
 function rate(ref, percentage) {
   return ref * percentage;
@@ -83,6 +83,13 @@ export const options = {
     // in order to display metrics for each scenario
     http_req_duration: ['max>=0'],
     checks: ['rate>=0'],
+    metric_name: [
+      {
+        threshold: 'p(95) < 300', // string
+        abortOnFail: true, // boolean
+        delayAbortEval: '10s', // string
+      },
+    ],
 }
 };
 
