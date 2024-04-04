@@ -15,6 +15,7 @@ on:
         - 04-request-response.js
         - 05-metadata-request-response.js
         - 06-breakpoint-metadata-request-response.js
+        - 07-test-scaling-metadata-request-response.js
         
 
 permissions:
