@@ -2,8 +2,8 @@
 import http from 'k6/http';
 import { check } from 'k6';
 
-const TOTAL_MINIMUM_RPS = 50;
-const TOTAL_MAXIMUM_RPS = 1000;
+const TOTAL_MINIMUM_RPS = 10;
+const TOTAL_MAXIMUM_RPS = 550;
 
 function rate(ref, percentage) {
   return ref * percentage;
@@ -27,7 +27,7 @@ export const options = {
       preAllocatedVUs: 100,
 
       // max allowed vu
-      maxVUs: 600,
+      maxVUs: 1000,
 
       stages: [
         // Start 50 iterations per `timeUnit` for the first minute.
@@ -48,7 +48,7 @@ export const options = {
         preAllocatedVUs: 100,
   
         // max allowed vu
-        maxVUs: 600,
+        maxVUs: 1000,
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
@@ -69,7 +69,7 @@ export const options = {
         preAllocatedVUs: 100,
   
         // max allowed vu
-        maxVUs: 600,
+        maxVUs: 1000,
   
         stages: [
           // Start 50 iterations per `timeUnit` for the first minute.
